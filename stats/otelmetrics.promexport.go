@@ -181,13 +181,16 @@ func updateGaugeValue(value float64, gauge *api.Float64ObservableGauge, localAtt
 	}
 }
 
+const AGENTURL string = "http://localhost"
+const AGENTPORT int = 8897
+
 func sendToAgent(data any, route string) error {
 	jsonContent, err := json.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("failed to serialize data: %v", err)
 	}
 
-	url := fmt.Sprintf("http://localhost:8897%s", route)
+	url := fmt.Sprintf("%s:%d%s", AGENTURL, AGENTPORT, route)
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonContent))
 	if err != nil {
 		return fmt.Errorf("POST request to agent failed: %v", err)
