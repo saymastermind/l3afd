@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"sync"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/otel/attribute"
@@ -21,7 +20,6 @@ var (
 	attribs				[]attribute.KeyValue
 	counterValues		map[*api.Int64Counter]*OtelCounterValue
 	gaugeValues			map[*api.Float64ObservableGauge]*OtelGaugeValue
-	gaugeValuesMutex 	sync.RWMutex
 
 	NFStartCount  *api.Int64Counter
 	NFStopCount   *api.Int64Counter
@@ -103,9 +101,6 @@ func SetupMetrics(hostname, daemonName, metricsAddr string) {
 		gaugeCopy := gauge
 		valCopy := gaugeVal
 		_, err = meter.RegisterCallback(func(_ context.Context, o api.Observer) error {
-			gaugeValuesMutex.RLock()
-			defer gaugeValuesMutex.RUnlock()
-
 			o.ObserveFloat64(*gaugeCopy, valCopy.GetValue(), valCopy.GetMeasurementOptions())
 			return nil
 		}, *gaugeCopy)
@@ -169,9 +164,6 @@ func SetWithVersion(value float64, gaugeVec *api.Float64ObservableGauge, ebpfPro
 }
 
 func updateGaugeValue(value float64, gauge *api.Float64ObservableGauge, localAttributes map[string]string) {
-	gaugeValuesMutex.Lock()
-	defer gaugeValuesMutex.Unlock()
-
 	gaugeObj := gaugeValues[gauge]
 	gaugeObj.SetValue(value)
 	gaugeObj.SetAttributes(localAttributes)

@@ -1,14 +1,18 @@
 package stats
 
 import (
+	"sync"
+
 	"go.opentelemetry.io/otel/attribute"
 	api "go.opentelemetry.io/otel/metric"
 )
 
 // =====================================================
 type OtelMetricAttributes struct {
-	MetricName			string
 	baseAttribsCount	int
+	mutex 				sync.RWMutex
+	
+	MetricName			string
 	Attribs 			[]attribute.KeyValue
 }
 
@@ -26,10 +30,16 @@ func newOtelMetricAttribs(metricName string, baseAttribs []attribute.KeyValue) *
 }
 
 func (otelMetricAttribs *OtelMetricAttributes) GetMeasurementOptions() api.MeasurementOption {
+	otelMetricAttribs.mutex.RLock()
+	defer otelMetricAttribs.mutex.RUnlock()
+
 	return api.WithAttributes(otelMetricAttribs.Attribs...)
 }
 
 func (otelMetricAttribs *OtelMetricAttributes) SetAttributes(attribValues map[string]string) {
+	otelMetricAttribs.mutex.Lock()
+	defer otelMetricAttribs.mutex.Unlock()
+
 	otelMetricAttribs.Attribs = otelMetricAttribs.Attribs[:otelMetricAttribs.baseAttribsCount]
 	for name, value := range attribValues {
 		otelMetricAttribs.Attribs = append(otelMetricAttribs.Attribs, attribute.Key(name).String(value))
@@ -37,6 +47,9 @@ func (otelMetricAttribs *OtelMetricAttributes) SetAttributes(attribValues map[st
 }
 
 func (otelMetricAttributes *OtelMetricAttributes) GetAttributes() []attribute.KeyValue {
+	otelMetricAttributes.mutex.RLock()
+	defer otelMetricAttributes.mutex.RUnlock()
+
 	return otelMetricAttributes.Attribs
 }
 
@@ -54,10 +67,16 @@ func NewGaugeValue(metricName string, baseAttribs []attribute.KeyValue) *OtelGau
 }
 
 func (gaugeValue *OtelGaugeValue) GetValue() float64 {
+	gaugeValue.mutex.RLock()
+	defer gaugeValue.mutex.RUnlock()
+
 	return gaugeValue.Value
 }
 
 func (gaugeValue *OtelGaugeValue) SetValue(val float64) {
+	gaugeValue.mutex.Lock()
+	defer gaugeValue.mutex.Unlock()
+	
 	gaugeValue.Value = val
 } 
 
@@ -75,5 +94,8 @@ func NewCounterValue(metricName string, baseAttribs []attribute.KeyValue) *OtelC
 }
 
 func (counterValue *OtelCounterValue) GetValue() int64 {
+	counterValue.mutex.RLock()
+	defer counterValue.mutex.Unlock()
+
 	return counterValue.Value
 }
