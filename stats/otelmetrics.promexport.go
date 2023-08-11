@@ -278,8 +278,8 @@ func processMonitoredMapValueUpdate(value float64, GaugeVec * api.Float64Observa
 	// value passed in from caller for rl_recv_count_map gets reset to 0
 	// for unknown reason. Adding temporary workaround to retrieve actual
 	// values from eBPF map instead.
-	mapValue := GeteBPFMapValue(mapName)
-	updateGaugeValue(float64(mapValue), targetGauge, localAttributes)
+	// mapValue := GeteBPFMapValue(mapName)
+	updateGaugeValue(value, targetGauge, localAttributes)
 }
 
 const AGENTURL string = "http://localhost"
